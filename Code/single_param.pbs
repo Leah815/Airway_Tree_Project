@@ -1,0 +1,94 @@
+#!/bin/bash
+#PBS -N airway_selectable_losses
+#PBS -l select=1:ncpus=8:ngpus=1:mem=24gb
+#PBS -l walltime=12:00:00
+#PBS -j oe
+
+# Output log (modify this path if needed)
+#PBS -o ./logs/selectable_losses_gamma_${PBS_JOBID}.log
+
+set -euo pipefail
+
+# ========================
+# USER CONFIGURATION
+# ========================
+
+# Set working directory (change to your project path)
+WORKDIR=$PBS_O_WORKDIR
+
+# Script path (relative to WORKDIR)
+SCRIPT=scripts/test_421_single_param_nobif_selectable_losses.py
+
+# Output directories
+OUTROOT=$WORKDIR/output_selectable_losses_gamma
+TMPDIR_OUT=$OUTROOT/tmp_csv
+CSVDIR=$OUTROOT/summary_csv
+
+mkdir -p "$OUTROOT" "$TMPDIR_OUT" "$CSVDIR" ./logs
+
+cd "$WORKDIR"
+
+# ========================
+# ENVIRONMENT SETUP
+# ========================
+
+# Load Python (modify if needed)
+module load python || true
+
+# Activate virtual environment (user must modify this)
+# source /path/to/your/venv/bin/activate
+
+# ========================
+# RUN EXPERIMENT
+# ========================
+
+python "$SCRIPT" \
+  --mode depth_growth \
+  --min_depth 2 \
+  --max_depth 6 \
+  --restarts 10 \
+  --num_target 50 \
+  --warm_rounds 0 \
+  --target_workers 1 \
+  --restart_workers 1 \
+  --num_workers 1 \
+  --seed 0 \
+  --n_head 5 \
+  --iters1 150 \
+  --iters2 150 \
+  --params gamma \
+  --plot_params gamma \
+  --scatter_depth 6 \
+  --init_mode random_range \
+  --theta_gap 20 \
+  --theta_range 30.0,80.0 \
+  --r0_range 5.70,10.90 \
+  --gamma_range 2.50,3.50 \
+  --ld_ratio_range 2.00,4.00 \
+  --asymmetry_range 0.05,0.15 \
+  --root_length_range 20.0,25.0 \
+  --use_t \
+  --use_cl \
+  --use_plane \
+  --out_prefix "$OUTROOT/results_single_param"
+
+# Optional flags:
+# --use_vol
+
+# ========================
+# ORGANIZE OUTPUT FILES
+# ========================
+
+shopt -s nullglob
+
+for f in "$OUTROOT"/__tmp_single_param_*.csv; do
+  mv "$f" "$TMPDIR_OUT"/
+done
+
+for f in "$OUTROOT"/*.csv; do
+  mv "$f" "$CSVDIR"/
+done
+
+echo "Done."
+echo "tmp csv   -> $TMPDIR_OUT"
+echo "summary   -> $CSVDIR"
