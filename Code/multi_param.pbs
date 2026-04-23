@@ -1,0 +1,63 @@
+#!/bin/bash
+#PBS -N multi_param
+#PBS -l select=1:ncpus=8:ngpus=1:mem=24gb
+#PBS -l walltime=10:00:00
+#PBS -j oe
+#PBS -m ae
+# Output log (modify if needed)
+#PBS -o ./logs/multi_param_${PBS_JOBID}.log
+set -euo pipefail
+
+# ========================
+# USER CONFIGURATION
+# ========================
+
+# Working directory (set automatically when submitting job)
+WORKDIR=$PBS_O_WORKDIR
+SCRIPT=$WORKDIR/multi_param.py
+OUTROOT=$WORKDIR/output_multi_param
+mkdir -p "$OUTROOT" "$WORKDIR/logs"
+
+# ========================
+# ENVIRONMENT SETUP
+# ========================
+
+# Load Python (modify depending on HPC system)
+module load python || true
+
+# Activate virtual environment (user must configure this)
+# source /path/to/your/venv/bin/activate
+
+# ========================
+# RUN EXPERIMENT
+# ========================
+
+RESTARTS=10
+NUM_TARGETS=20
+SEED=0
+DEPTH=6
+N_HEAD=5
+ITERS1=150
+ITERS2=150
+WARM_ROUNDS=0
+NUM_WORKERS=4
+INIT_MODE=random
+INIT_PERTURB_PCT=0.20
+IF_BIF=False
+ALL_TRAINABLE_PARAMS=r0,gamma,ld_ratio,theta_deg,asymmetry,root_length_mm
+python "$SCRIPT" \
+  --skip_single \
+  --all_out_prefix "$OUTROOT/results_multi_param" \
+  --restarts "$RESTARTS" \
+  --num_targets "$NUM_TARGETS" \
+  --seed "$SEED" \
+  --depth "$DEPTH" \
+  --n_head "$N_HEAD" \
+  --iters1 "$ITERS1" \
+  --iters2 "$ITERS2" \
+  --warm_rounds "$WARM_ROUNDS" \
+  --num_workers "$NUM_WORKERS" \
+  --init_mode "$INIT_MODE" \
+  --init_perturb_pct "$INIT_PERTURB_PCT" \
+  --all_trainable_params "$ALL_TRAINABLE_PARAMS" \
+  --if_bif "$IF_BIF"
